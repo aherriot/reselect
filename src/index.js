@@ -19,13 +19,15 @@ export function defaultMemoize(func, equalityCheck = defaultEqualityCheck) {
 function getDependencies(funcs) {
   const dependencies = Array.isArray(funcs[0]) ? funcs[0] : funcs
 
-  if (!dependencies.every(dep => typeof dep === 'function')) {
+  if (!dependencies.every(dep => {
+      return typeof dep === 'function' || typeof dep === 'object'})) {
+        
     const dependencyTypes = dependencies.map(
       dep => typeof dep
     ).join(', ')
     throw new Error(
-      `Selector creators expect all input-selectors to be functions, ` +
-      `instead received the following types: [${dependencyTypes}]`
+      `Selector creators expect all input-selectors to be functions or state` +
+      ` objects, instead received the following types: [${dependencyTypes}]`
     )
   }
 
@@ -48,7 +50,13 @@ export function createSelectorCreator(memoize, ...memoizeOptions) {
 
     const selector = (state, props, ...args) => {
       const params = dependencies.map(
-        dependency => dependency(state, props, ...args)
+        dependency => {
+          if(typeof dependency === 'function') {
+            return dependency(state, props, ...args)
+          } else {
+            return dependency
+          }
+        }
       )
       return memoizedResultFunc(...params)
     }
